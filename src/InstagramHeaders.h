@@ -75,6 +75,12 @@
 @property(readonly, nonatomic) NSURL *url;
 @end
 
+@interface IGImageURL : NSObject
+@property (nonatomic, assign, readonly) NSURL *url;
+@property (nonatomic, assign, readonly) CGFloat width;
+@property (nonatomic, assign, readonly) CGFloat height;
+@end
+
 @interface IGVideo : NSObject
 - (id)sortedVideoURLsBySize; // Before Instagram v398
 - (id)allVideoURLs; // After Instagram v398
@@ -91,11 +97,14 @@
 @interface IGMedia : IGBaseMedia
 @property(readonly) IGVideo *video;
 @property(readonly) IGPhoto *photo;
+@property(atomic, strong, readwrite) NSArray *items; // [IGPostItem] for carousels
+- (BOOL)isPhotoMedia;
 @end
 
 @interface IGPostItem : NSObject
 @property(readonly) IGVideo *video;
 @property(readonly) IGPhoto *photo;
+@property(readonly) NSInteger mediaType; // 1: photo, 2: video
 @end
 
 @interface IGPageMediaView : UIView
@@ -414,8 +423,19 @@
 @interface IGSundialViewerNavigationBarOld : UIView
 @end
 
+@interface IGFeedItemUFICellConfigurableDelegateImpl : NSObject
+@end
+
 @interface IGFeedItemUFICell : UIView
+@property (nonatomic, weak, readwrite) id delegate; // IGFeedItemUFICellConfigurableDelegateImpl
+@property (nonatomic, assign, readonly) NSInteger pageControlCurrentPage;
 - (void)UFIButtonBarDidTapOnRepost:(id)arg1;
+@end
+
+@interface IGUFIInteractionCountsView : UIView
+@property (nonatomic, assign, readonly) UIButton *sendButton;
+@property (nonatomic, weak, readwrite) id delegate; // IGFeedItemUFICell
+- (void)setupSaveAllButton;
 @end
 
 @interface IGNotesCreationFeatureSupportModel : NSObject

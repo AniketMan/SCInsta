@@ -144,16 +144,26 @@
 + (NSURL *)getVideoUrl:(IGVideo *)video {
     if (!video) return nil;
 
-    // The past (pre v398)
+    // Primary: access _videoVersionDictionaries via KVC (most reliable across versions)
+    NSArray *videoVersionDicts = [video valueForKey:@"_videoVersionDictionaries"];
+    if (videoVersionDicts.count > 0) {
+        // Pick the highest resolution (first entry is typically largest)
+        NSDictionary *best = videoVersionDicts.firstObject;
+        NSString *urlString = best[@"url"];
+        if (urlString.length) return [NSURL URLWithString:urlString];
+    }
+
+    // Fallback: allVideoURLs (post v398)
+    if ([video respondsToSelector:@selector(allVideoURLs)]) {
+        NSURL *url = [[video allVideoURLs] anyObject];
+        if (url) return url;
+    }
+
+    // Legacy fallback: sortedVideoURLsBySize (pre v398)
     if ([video respondsToSelector:@selector(sortedVideoURLsBySize)]) {
         NSArray<NSDictionary *> *sorted = [video sortedVideoURLsBySize];
         NSString *urlString = sorted.firstObject[@"url"];
-        return urlString.length ? [NSURL URLWithString:urlString] : nil;
-    }
-
-    // The present (post v398)
-    if ([video respondsToSelector:@selector(allVideoURLs)]) {
-        return [[video allVideoURLs] anyObject];
+        if (urlString.length) return [NSURL URLWithString:urlString];
     }
 
     return nil;
@@ -165,6 +175,30 @@
     if (!video) return nil;
 
     return [SCIUtils getVideoUrl:video];
+}
++ (NSURL *)getVideoUrlFromPlayerInView:(UIView *)view {
+    // Traverse the view hierarchy to find an AVPlayerLayer and extract the current asset URL.
+    // This is the fallback when the data model has no URL (e.g., content not fully resolved).
+    for (UIView *subview in view.subviews) {
+        CALayer *layer = subview.layer;
+        if ([layer isKindOfClass:[AVPlayerLayer class]]) {
+            AVPlayerLayer *playerLayer = (AVPlayerLayer *)layer;
+            AVPlayer *player = playerLayer.player;
+            if (player) {
+                AVPlayerItem *currentItem = player.currentItem;
+                if (currentItem) {
+                    AVAsset *asset = currentItem.asset;
+                    if ([asset isKindOfClass:[AVURLAsset class]]) {
+                        return ((AVURLAsset *)asset).URL;
+                    }
+                }
+            }
+        }
+        // Recurse into subviews
+        NSURL *found = [SCIUtils getVideoUrlFromPlayerInView:subview];
+        if (found) return found;
+    }
+    return nil;
 }
 
 // View Controllers

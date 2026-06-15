@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <QuickLook/QuickLook.h>
+#import <AVFoundation/AVFoundation.h>
 #import <os/log.h>
 #import <objc/message.h>
 
@@ -50,6 +51,7 @@
 
 + (NSURL *)getVideoUrl:(IGVideo *)video;
 + (NSURL *)getVideoUrlForMedia:(IGMedia *)media;
++ (NSURL *)getVideoUrlFromPlayerInView:(UIView *)view;
 
 // View Controllers
 + (UIViewController *)viewControllerForView:(UIView *)view;
